@@ -131,6 +131,13 @@ window.__ModuleLoader__.load({ id: "roleplaytimer", factory: (require) => {
           }),
           h("span", { style: st.hint }, "用户沉默超过该时长后唤醒一次。")),
         h("label", { style: st.field },
+          h("span", { style: st.label }, "模糊区间（±分钟）/ Fuzzy range"),
+          h("input", {
+            type: "number", min: 0, max: 1440, style: st.input, value: cfg.jitterMinutes,
+            onChange: (e) => set("jitterMinutes", Number(e.target.value)),
+          }),
+          h("span", { style: st.hint }, "例：间隔 180、模糊 30 → 实际在 150~210 分钟之间随机唤醒。0 = 精确。")),
+        h("label", { style: st.field },
           h("span", { style: st.label }, "每日上限（次，0 = 不限）/ Daily max"),
           h("input", {
             type: "number", min: 0, max: 96, style: st.input, value: cfg.dailyMaxWakes,

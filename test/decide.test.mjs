@@ -11,7 +11,9 @@ import {
   parseClock,
   quietWindow,
   renderPrompt,
+  rollWakeAt,
   scanUserMessages,
+  wakeKeyOf,
 } from '../dsh/runtime.js'
 import { defaultConfig, normalizeConfig } from '../dsh/store.js'
 
@@ -163,4 +165,32 @@ test('normalizeConfig clamps and keeps the supported shape', () => {
   assert.equal(c.enabled, false)
   assert.equal(c.defaultMuted, true)
   assert.equal(normalizeConfig({ defaultMuted: false }).defaultMuted, false)
+  assert.equal(c.jitterMinutes, 0)
+  assert.equal(normalizeConfig({ jitterMinutes: 9999 }).jitterMinutes, 1440)
+  assert.equal(normalizeConfig({ jitterMinutes: -5 }).jitterMinutes, 0)
+})
+
+test('rollWakeAt spreads the target inside interval ± jitter', () => {
+  const roll = (random, jitterMinutes = 20) =>
+    rollWakeAt({ sinceMs: 0, intervalMinutes: 60, jitterMinutes, random })
+  assert.equal(roll(() => 0.5), 60 * 60_000)
+  assert.equal(roll(() => 0), 40 * 60_000)
+  assert.ok(roll(() => 0.9999999) <= 80 * 60_000)
+  assert.equal(roll(() => 0, 0), 60 * 60_000)
+  assert.equal(rollWakeAt({ sinceMs: 0, intervalMinutes: 1, jitterMinutes: 999, random: () => 0 }), 60_000)
+})
+
+test('wakeKeyOf tracks the inputs a target was rolled from', () => {
+  const base = { intervalMinutes: 60, jitterMinutes: 20 }
+  assert.notEqual(wakeKeyOf(1, base), wakeKeyOf(2, base))
+  assert.notEqual(wakeKeyOf(1, base), wakeKeyOf(1, { ...base, jitterMinutes: 21 }))
+  assert.equal(wakeKeyOf(1, base), wakeKeyOf(1, { ...base }))
+})
+
+test('decide honours an explicit rolled target', () => {
+  const config = cfg({ dailyMaxWakes: 0, quietStart: '', quietEnd: '' })
+  assert.equal(decide({ nowMs: 1000, sinceMs: 0, wakeAtMs: 500, dayCount: 0, cfg: config }).kind, 'fire')
+  const late = decide({ nowMs: 1000, sinceMs: 0, wakeAtMs: 5_000_000, dayCount: 0, cfg: config })
+  assert.equal(late.kind, 'wait')
+  assert.equal(late.reason, 'not-due')
 })

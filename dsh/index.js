@@ -8,7 +8,7 @@
 // settings panel talks to the routes registered at the bottom of this file.
 
 import { Store, configPath, defaultConfig } from './store.js'
-import { WakeRuntime, sessionIdOf, sessionTitleOf, dayKeyOf } from './runtime.js'
+import { WakeRuntime, sessionIdOf, sessionTitleOf, wakeKeyOf, dayKeyOf } from './runtime.js'
 
 export const name = 'roleplaytimer'
 export const inject = ['agents']
@@ -93,6 +93,11 @@ export function apply(ctx, config = {}) {
     const cfg = store.config
     const clock = Date.now() + store.offsetMs
     const sinceMs = st ? st.sinceMs : clock
+    // Only trust a target that was rolled from the current silence window.
+    const nextWakeAt =
+      st && st.wakeKey === wakeKeyOf(sinceMs, cfg) && Number.isFinite(st.wakeAtMs)
+        ? st.wakeAtMs
+        : sinceMs + cfg.intervalMinutes * 60000
     return {
       sessionId,
       title: sessionTitleOf(agent, ctx),
@@ -100,7 +105,7 @@ export function apply(ctx, config = {}) {
       muted: !!(st && st.muted),
       sinceMs,
       silentMinutes: Math.max(0, Math.round((clock - sinceMs) / 60000)),
-      nextWakeAt: sinceMs + cfg.intervalMinutes * 60000,
+      nextWakeAt,
       dayCount: st ? st.dayCount : 0,
       dayKey: st ? st.dayKey : dayKeyOf(clock),
       lastWakeAt: st ? st.lastWakeAt : null,

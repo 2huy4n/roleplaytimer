@@ -408,3 +408,53 @@ test('sessionTitleOf prefers the sessionTitle service and falls back to the log'
   assert.equal(sessionTitleOf({ session }, {}), '来自日志的标题')
   assert.equal(sessionTitleOf({ session: { id: 'x', snapshotEvents: () => [] } }, {}), null)
 })
+
+test('模糊唤醒：间隔 180 ± 30 分钟，目标随机落在 150~210 分钟', async () => {
+  const { dir, file } = tempStorePath()
+  try {
+    const store = makeStore(file, { intervalMinutes: 180, jitterMinutes: 30 })
+    const agent = makeAgent('session-r')
+    const runtime = new WakeRuntime({ agent, store, logger: quiet })
+    const st = seededState(store, 'session-r')
+    st.sinceMs = Date.now()
+
+    await runtime.tick()
+    const minutes = (st.wakeAtMs - st.sinceMs) / 60_000
+    assert.ok(minutes >= 150 && minutes <= 210, '落在区间外: ' + minutes)
+
+    // 同一个沉默窗口里反复 tick 不重掷，否则倒计时会一直跳
+    const rolled = st.wakeAtMs
+    await runtime.tick()
+    assert.equal(st.wakeAtMs, rolled)
+    assert.equal(agent.followups.length, 0)
+    await runtime.dispose()
+  } finally {
+    rmSync(dir, { recursive: true, force: true })
+  }
+})
+
+test('用户发言后重新掷一次唤醒时刻', async () => {
+  const { dir, file } = tempStorePath()
+  try {
+    const store = makeStore(file, { intervalMinutes: 180, jitterMinutes: 30 })
+    const agent = makeAgent('session-s')
+    const runtime = new WakeRuntime({ agent, store, logger: quiet })
+    const st = seededState(store, 'session-s')
+    st.sinceMs = Date.now() - 30 * 60_000
+
+    await runtime.tick()
+    const staleKey = st.wakeKey
+
+    agent.session.snapshotEvents = () => [
+      { type: 'user/message', time: Date.now(), data: { source: { kind: 'user' } } },
+    ]
+    await runtime.tick()
+
+    assert.notEqual(st.wakeKey, staleKey)
+    const minutes = (st.wakeAtMs - st.sinceMs) / 60_000
+    assert.ok(minutes >= 150 && minutes <= 210, '重新掷出的目标越界: ' + minutes)
+    await runtime.dispose()
+  } finally {
+    rmSync(dir, { recursive: true, force: true })
+  }
+})

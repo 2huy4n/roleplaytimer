@@ -21,6 +21,7 @@ export function defaultConfig() {
   return {
     enabled: false,
     intervalMinutes: 150,
+    jitterMinutes: 0,
     dailyMaxWakes: 6,
     quietStart: '23:30',
     quietEnd: '08:00',
@@ -51,6 +52,7 @@ export function normalizeConfig(raw) {
   return {
     enabled: !!merged.enabled,
     intervalMinutes: clampInt(merged.intervalMinutes, 1, 1440, base.intervalMinutes),
+    jitterMinutes: clampInt(merged.jitterMinutes, 0, 1440, base.jitterMinutes),
     dailyMaxWakes: clampInt(merged.dailyMaxWakes, 0, 96, base.dailyMaxWakes),
     quietStart: typeof merged.quietStart === 'string' ? merged.quietStart.trim() : base.quietStart,
     quietEnd: typeof merged.quietEnd === 'string' ? merged.quietEnd.trim() : base.quietEnd,
@@ -76,6 +78,8 @@ function freshState(now, muted = true) {
     dayCount: 0,
     lastWakeAt: null,
     wakes: 0,
+    wakeAtMs: null,
+    wakeKey: null,
     muted: !!muted,
   }
 }

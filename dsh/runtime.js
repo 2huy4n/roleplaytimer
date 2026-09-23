@@ -100,10 +100,31 @@ export function clampDelay(ms) {
 }
 
 /**
+ * Identity of the inputs a rolled target was derived from. While this is
+ * unchanged the target stays valid, so a new user message or a config edit
+ * re-rolls and everything else keeps one stable schedule.
+ */
+export function wakeKeyOf(sinceMs, cfg) {
+  return sinceMs + '|' + (cfg && cfg.intervalMinutes) + '|' + ((cfg && cfg.jitterMinutes) || 0)
+}
+
+/**
+ * Pick this cycle's wake moment inside [interval - jitter, interval + jitter]
+ * so the agent does not look like clockwork. The jitter is capped to keep at
+ * least a minute of silence; `random` is injectable for tests.
+ */
+export function rollWakeAt({ sinceMs, intervalMinutes, jitterMinutes, random = Math.random }) {
+  const intervalMs = Math.max(1, Number(intervalMinutes) || 0) * 60_000
+  const span = Math.min(Math.max(0, Number(jitterMinutes) || 0) * 60_000, intervalMs - 60_000)
+  return sinceMs + intervalMs + (span > 0 ? Math.round((random() * 2 - 1) * span) : 0)
+}
+
+/**
  * Decide what the runtime should do next. Pure: the debug clock offset is
  * folded in here so 'simulate elapsed time' only changes the stored offset.
+ * `wakeAtMs` is the already-rolled target; without it the interval is exact.
  */
-export function decide({ nowMs, sinceMs, dayCount, cfg, offsetMs = 0 }) {
+export function decide({ nowMs, sinceMs, wakeAtMs, dayCount, cfg, offsetMs = 0 }) {
   if (!cfg || !cfg.enabled) return { kind: 'wait', delayMs: MAX_TIMER_DELAY_MS, reason: 'disabled' }
 
   const clock = nowMs + (Number(offsetMs) || 0)
@@ -111,8 +132,9 @@ export function decide({ nowMs, sinceMs, dayCount, cfg, offsetMs = 0 }) {
     return { kind: 'wait', delayMs: clampDelay(msUntilLocalMidnight(clock)), reason: 'daily-max' }
   }
 
-  const intervalMs = Math.max(1, cfg.intervalMinutes) * 60_000
-  const dueAt = sinceMs + intervalMs
+  const dueAt = Number.isFinite(wakeAtMs)
+    ? wakeAtMs
+    : sinceMs + Math.max(1, cfg.intervalMinutes) * 60_000
   if (clock < dueAt) return { kind: 'wait', delayMs: clampDelay(dueAt - clock), reason: 'not-due' }
 
   const quiet = quietWindow(cfg)
@@ -243,9 +265,23 @@ export class WakeRuntime {
       return
     }
 
+    // Roll once and remember it: the target has to stay put while the
+    // countdown runs, or a jittered wake would jump on every tick.
+    const wakeKey = wakeKeyOf(st.sinceMs, cfg)
+    if (st.wakeKey !== wakeKey || !Number.isFinite(st.wakeAtMs)) {
+      st.wakeAtMs = rollWakeAt({
+        sinceMs: st.sinceMs,
+        intervalMinutes: cfg.intervalMinutes,
+        jitterMinutes: cfg.jitterMinutes,
+      })
+      st.wakeKey = wakeKey
+      this.store.save()
+    }
+
     const decision = decide({
       nowMs: Date.now(),
       sinceMs: st.sinceMs,
+      wakeAtMs: st.wakeAtMs,
       dayCount: st.dayCount,
       cfg,
       offsetMs: this.store.offsetMs,

@@ -11,6 +11,9 @@
 投递走 DSH 的正式接缝 `agent.followup()`，并只在智能体处于空闲时通过
 `agent.runMaintenance()` 投递——**不会打断正在进行的回合**。
 
+唤醒时刻不是死板的定时器：可以设一个模糊区间，实际唤醒在其中随机发生。
+例如间隔 180 分钟 + 模糊 30 分钟 → 真实唤醒落在 **150~210 分钟**之间。
+
 ## 硬约束
 
 - **必须有活着的根 agent**：只有 DSH 应用正在运行、且该会话已打开时才可能投递。
@@ -29,6 +32,7 @@
 | `enabled` | false | 总开关 |
 | `defaultMuted` | true | 首次出现的会话是否默认静音（默认不唤醒，须手动取消静音）|
 | `intervalMinutes` | 150 | 用户沉默多久后唤醒一次 |
+| `jitterMinutes` | 0 | 模糊区间（±分钟）：例 间隔 180 + 模糊 30 → 实际在 150~210 分钟内随机唤醒，0 = 精确 |
 | `dailyMaxWakes` | 6 | 每日上限，0 = 不限；次日 00:00 重置 |
 | `quietStart` / `quietEnd` | 23:30 / 08:00 | 静默时段，跨午夜有效；留空关闭 |
 | `wakePrompt` | 见下 | 唤醒提示词，支持 `{minutes}` `{count}` `{time}` `{session_id}` |
@@ -45,7 +49,11 @@
 ## 安装
 
 ```sh
-dsh plugin --profile web add "git+https://github.com/2huy4n/roleplaytimer#v0.1.1"
+dsh plugin --profile <profile> add "git+https://github.com/2huy4n/roleplaytimer#v0.2.0"
 ```
 
-启用roleplaytimer，重启 DSH，在「设置」里找到 **roleplaytimer**的控制面板。
+也可以省略 `--profile` 使用当前默认 profile；profile 名就是 `~/.dsh/profiles/` 下的目录名。
+
+重启 DSH，在「设置」里找到 **roleplaytimer** 控制面板：勾选「启用主动唤醒」，再对着你想唤醒的会话点「取消静音」。
+
+安装时 `dsh plugin` 会自动把插件登记进 profile 的 `dsh.profile.bundles`，不需要手动编辑；升级只需把版本号换掉重跑一次。
