@@ -45,7 +45,7 @@
 ## 安装
 
 ```sh
-dsh plugin --profile <profile> add github:2huy4n/roleplaytimer#v0.1.1
+dsh plugin --profile web add "git+https://github.com/2huy4n/roleplaytimer#v0.1.1"
 ```
 
 启用roleplaytimer，重启 DSH，在「设置」里找到 **roleplaytimer**的控制面板。
