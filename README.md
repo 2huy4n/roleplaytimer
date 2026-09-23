@@ -11,7 +11,7 @@
 投递走 DSH 的正式接缝 `agent.followup()`，并只在智能体处于空闲时通过
 `agent.runMaintenance()` 投递——**不会打断正在进行的回合**。
 
-## 硬约束（不是 bug）
+## 硬约束
 
 - **必须有活着的根 agent**：只有 DSH 应用正在运行、且该会话已打开时才可能投递。
   应用关闭期间不投递，也不补发。
@@ -48,16 +48,7 @@
 dsh plugin --profile <profile> add github:2huy4n/roleplaytimer#v0.1.1
 ```
 
-然后把 `roleplaytimer` 加进该 profile `package.json` 的 `dsh.profile.bundles` 数组，
-重启 DSH，在「设置」里找到 **roleplaytimer**。
-
-本仓库不含构建产物，仓库本身即发布物；`#v0.1.1` 是版本 tag，也可以换成 `#<commit-sha>`。
-
-本地开发时改用 `file:` 安装，改动即时生效：
-
-```sh
-dsh plugin --profile <profile> add file:D:\@GAME\DSH-Chat\roleplaytimer
-```
+启用roleplaytimer，重启 DSH，在「设置」里找到 **roleplaytimer**的控制面板。
 
 ## 状态文件
 
