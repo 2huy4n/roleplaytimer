@@ -49,25 +49,3 @@ dsh plugin --profile <profile> add github:2huy4n/roleplaytimer#v0.1.1
 ```
 
 启用roleplaytimer，重启 DSH，在「设置」里找到 **roleplaytimer**的控制面板。
-
-## 状态文件
-
-`$DSH_HOME/roleplaytimer.json`（默认 `~/.dsh/roleplaytimer.json`），可用环境变量
-`DSH_ROLEPLAYTIMER_STORE` 覆盖。内容为 `{ config, state, debug, log }`，
-其中 `state` 按 session id 记录沉默起点、今日次数与静音状态。
-
-## 结构
-
-```
-dsh/store.js     配置 / 状态（含新会话默认静音）/ 日志持久化
-dsh/runtime.js   计时决策（纯函数）+ 单 agent 运行时
-dsh/index.js     插件入口：挂载根 agent、HTTP 路由
-client/client.js 设置界面 + 调试面板
-test/            node --test
-```
-
-## 测试
-
-```sh
-node --test
-```
