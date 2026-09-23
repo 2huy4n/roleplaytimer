@@ -1,0 +1,53 @@
+{
+  "name": "roleplaytimer",
+  "version": "0.1.1",
+  "private": true,
+  "type": "module",
+  "description": "Proactive wake-up plugin for DeepSeek Harness: periodically simulates a user message so a roleplay agent speaks first.",
+  "main": "./dsh/index.js",
+  "exports": {
+    ".": "./dsh/index.js",
+    "./client": "./client/client.js",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dsh",
+    "client",
+    "cordis.patch.yml",
+    "README.md"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "inject": [
+        "@deepseek-ai/dsh-client-ui-settings"
+      ],
+      "platform": "web"
+    }
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "test": "node --test"
+  },
+  "keywords": [
+    "dsh-plugin",
+    "deepseek-harness",
+    "dsh",
+    "cordis",
+    "roleplay",
+    "proactive"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/2huy4n/roleplaytimer.git"
+  },
+  "homepage": "https://github.com/2huy4n/roleplaytimer#readme",
+  "bugs": {
+    "url": "https://github.com/2huy4n/roleplaytimer/issues"
+  },
+  "license": "MIT"
+}

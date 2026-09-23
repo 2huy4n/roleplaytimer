@@ -1,0 +1,82 @@
+# roleplaytimer
+
+让 DSH 的角色扮演智能体在用户长时间沉默后**主动开口**。
+
+## 它做什么
+
+用户沉默达到设定时长后，插件向该会话投递一条 **user 角色**的 follow-up 消息，
+内容由可编辑的「唤醒提示词」渲染而成。智能体被唤醒后按角色卡继续以角色身份发言，
+而不是等待用户输入。
+
+投递走 DSH 的正式接缝 `agent.followup()`，并只在智能体处于空闲时通过
+`agent.runMaintenance()` 投递——**不会打断正在进行的回合**。
+
+## 硬约束（不是 bug）
+
+- **必须有活着的根 agent**：只有 DSH 应用正在运行、且该会话已打开时才可能投递。
+  应用关闭期间不投递，也不补发。
+- **空闲才投递**：用户正在对话时不会插话；`runMaintenance` 占用中会退避重试。
+- **倒计时以最后一次真实用户消息为起点**：插件自己的唤醒消息（`source.kind = 'plugin'`）
+  不计入用户活动。
+- **新会话默认静音（opt-in）**：唤醒会往用户的历史里写东西，所以插件第一次看到某个
+  会话时默认不唤醒，需要在面板里对该会话点「取消静音」。仅影响首次出现的会话，
+  已有会话保留各自的静音状态。
+
+## 配置项
+
+| 键 | 默认 | 说明 |
+| --- | --- | --- |
+| `enabled` | false | 总开关 |
+| `defaultMuted` | true | 首次出现的会话是否默认静音（默认不唤醒，须手动取消静音）|
+| `intervalMinutes` | 150 | 用户沉默多久后唤醒一次 |
+| `dailyMaxWakes` | 6 | 每日上限，0 = 不限；次日 00:00 重置 |
+| `quietStart` / `quietEnd` | 23:30 / 08:00 | 静默时段，跨午夜有效；留空关闭 |
+| `wakePrompt` | 见下 | 唤醒提示词，支持 `{minutes}` `{count}` `{time}` `{session_id}` |
+| `debugEnabled` | true | 是否显示调试面板 |
+
+## 调试面板
+
+- **模拟经过时间**：`+30` / `+150` / 自定义分钟数，只改变插件的判断时钟，不动系统时间
+- **立即唤醒**：绕过计时立刻投递
+- **静音 / 取消静音**：按会话关闭唤醒（新会话默认已静音，想唤醒谁就对谁点「取消静音」）
+- **重置计时**：把该会话当作刚刚有用户发言
+- **投递日志**：最近 20 次投递记录
+
+## 安装
+
+```sh
+dsh plugin --profile <profile> add github:2huy4n/roleplaytimer#v0.1.1
+```
+
+然后把 `roleplaytimer` 加进该 profile `package.json` 的 `dsh.profile.bundles` 数组，
+重启 DSH，在「设置」里找到 **roleplaytimer**。
+
+本仓库不含构建产物，仓库本身即发布物；`#v0.1.1` 是版本 tag，也可以换成 `#<commit-sha>`。
+
+本地开发时改用 `file:` 安装，改动即时生效：
+
+```sh
+dsh plugin --profile <profile> add file:D:\@GAME\DSH-Chat\roleplaytimer
+```
+
+## 状态文件
+
+`$DSH_HOME/roleplaytimer.json`（默认 `~/.dsh/roleplaytimer.json`），可用环境变量
+`DSH_ROLEPLAYTIMER_STORE` 覆盖。内容为 `{ config, state, debug, log }`，
+其中 `state` 按 session id 记录沉默起点、今日次数与静音状态。
+
+## 结构
+
+```
+dsh/store.js     配置 / 状态（含新会话默认静音）/ 日志持久化
+dsh/runtime.js   计时决策（纯函数）+ 单 agent 运行时
+dsh/index.js     插件入口：挂载根 agent、HTTP 路由
+client/client.js 设置界面 + 调试面板
+test/            node --test
+```
+
+## 测试
+
+```sh
+node --test
+```

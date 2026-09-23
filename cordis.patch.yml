@@ -1,0 +1,4 @@
+# roleplaytimer bundle patch: inserts the plugin row into the web plugin roster.
+- insert:
+    - id: roleplaytimer
+      name: 'roleplaytimer'
