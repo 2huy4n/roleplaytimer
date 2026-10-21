@@ -1,3 +1,7 @@
+**This project is no longer actively maintained. If you are using the latest version of DSH, please check out the fork by @kurumi3333, [https://github.com/kurumi3333/roleplaytimer](https://github.com/kurumi3333/roleplaytimer), or my new, more comprehensive project: [ProjectKaren](https://github.com/2huy4n/ProjectKaren).**
+
+**如果您使用的是最新版 DSH，请移步至 @kurumi3333 的修复分支 [https://github.com/kurumi3333/roleplaytimer](https://github.com/kurumi3333/roleplaytimer) 获取兼容更新。此外，本项目的所有核心功能已由我开发的全新、更全面的项目 [ProjectKaren](https://github.com/2huy4n/ProjectKaren) 所替代，欢迎体验。**
+
 # roleplaytimer
 
 让 DSH 的角色扮演智能体在用户长时间沉默后**主动开口**。
@@ -54,4 +58,5 @@ dsh plugin --profile <profile> add "git+https://github.com/2huy4n/roleplaytimer#
 
 重启 DSH，在「设置」里找到 **roleplaytimer** 控制面板：勾选「启用主动唤醒」，再对着你想唤醒的会话点「取消静音」。
 
-This project is no longer actively maintained. If you are using the latest version of DSH, please check out the fork by kurumi3333, or my new, more comprehensive project: ProjectKaren.
+本项目已停止维护，如果您使用的是最新版的Deepseek Harness，请
+
